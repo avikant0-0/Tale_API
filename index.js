@@ -20,6 +20,10 @@ mongoose
   .connect(process.env.URLToConnect)
   .then(() => {
     console.log("Connected to MongoDB");
+    app.listen(port, () => {
+      console.log(`http://localhost:${port}`);
+    });
+    
   })
   .catch((err) => {
     console.log("Error occured while connecting to MongoDB", err);
@@ -32,9 +36,6 @@ app.get("/", (req, res) => {
   res.send("started");
 });
 
-app.listen(port, () => {
-  console.log(`http://localhost:${port}`);
-});
 
 //function to create a new token
 
