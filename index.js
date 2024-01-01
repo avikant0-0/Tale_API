@@ -23,7 +23,6 @@ mongoose
     app.listen(port, () => {
       console.log(`http://localhost:${port}`);
     });
-    
   })
   .catch((err) => {
     console.log("Error occured while connecting to MongoDB", err);
@@ -35,7 +34,6 @@ const Message = require("./models/message");
 app.get("/", (req, res) => {
   res.send("started");
 });
-
 
 //function to create a new token
 
@@ -255,11 +253,6 @@ app.post("/messageslol", async (req, res) => {
     console.log("Error in /messages", err);
     res.status(500).json({ Message: "Internal Server Error" });
   }
-  // try {
-  //   console.log("Request bodynn:", req.body);
-  // } catch (error) {
-  //   console.log("FOINODIFJ", error);
-  // }
 });
 
 //Endpoint to get Messages of sender and reciever
@@ -342,4 +335,14 @@ app.get("/friendss/:UserId", async (req, res) => {
     console.log(error);
     res.status(500).json({ Message: "Error in deciding state" });
   }
+});
+
+app.post("/updateprofilepic", async (req, res) => {
+  // console.log(req.body);
+  const { id, ImageUrl } = req.body;
+  console.log(id, ImageUrl);
+  const user = await User.findById(id);
+  user.Images = ImageUrl;
+  await user.save();
+  res.status(200).json({ success: true, message: "Name updated successfully" });
 });
