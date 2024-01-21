@@ -29,8 +29,7 @@ const UserSchema = new mongoose.Schema({
   ],
   Friends: [
     {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      type: mongoose.Schema.Types.Mixed, // this allows any kind of data in the array
     },
   ],
   SentFriendRequests: [

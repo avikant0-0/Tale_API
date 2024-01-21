@@ -6,6 +6,7 @@ const LocalStrategy = require("passport-local").Strategy;
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
+const crypto = require("crypto");
 dotenv.config();
 
 const app = express();
@@ -155,6 +156,16 @@ app.get("/recievefriendrequest/:UserId", async (req, res) => {
 
 //Endpoint to recieve Accept the friend request of a particular person
 
+function generateUniqueString(str1, str2) {
+  // Concatenate the two strings with a separator
+  let input = str1 + "|" + str2;
+  // Create a hash object
+  let hash = crypto.createHash("md5");
+  // Update the hash with the input
+  hash.update(input);
+  // Return the hash digest in hexadecimal format
+  return hash.digest("hex");
+}
 app.post("/acceptfriendrequests", async (req, res) => {
   try {
     let { SenderId, RecieverId } = req.body;
@@ -163,9 +174,12 @@ app.post("/acceptfriendrequests", async (req, res) => {
     RecieverId = RecieverId.slice(1, -1);
     const Sender = await User.findById(SenderId);
     const Reciever = await User.findById(RecieverId);
-
-    Sender.Friends.push(RecieverId);
-    Reciever.Friends.push(SenderId);
+    let uniqueString = generateUniqueString(SenderId, RecieverId);
+    console.log("ACCEPTFRIENDSREQUEST", SenderId, RecieverId, uniqueString);
+    const array1 = [RecieverId, uniqueString];
+    const array2 = [SenderId, uniqueString];
+    Sender.Friends.push(array1);
+    Reciever.Friends.push(array2);
 
     Reciever.RecievedFriendRequests = Reciever.RecievedFriendRequests.filter(
       (request) => request.toString() !== SenderId.toString()
@@ -190,31 +204,35 @@ app.get("/friends/:UserId", async (req, res) => {
     console.log("SomeChanges");
     UserId = UserId.slice(1, -1);
     console.log(UserId);
-    const user = await User.findById(UserId).populate(
-      "Friends",
-      "Name Gmail Images"
-    );
-    const acceptedFriends = user.Friends;
-    console.log(acceptedFriends);
-    return res.json(acceptedFriends);
+    const user = await User.findById(UserId);
+    const friends = user.Friends;
+    const friendsDetails = [];
+    for (let friend of friends) {
+      // Find the friend document by friend id
+      const friendDoc = await User.findById(friend[0]);
+
+      // Check if the friend exists
+      if (friendDoc) {
+        // Push the friend details to the array
+        friendsDetails.push({
+          Name: friendDoc.Name,
+          Gmail: friendDoc.Gmail,
+          Images: friendDoc.Images,
+          _id: friendDoc._id,
+          encrytionstring: friend[1],
+        });
+      }
+      // console.log(friend[0]);
+    }
+    console.log(friendsDetails);
+    // console.log(friends);
+    // return res.json(acceptedFriends);
+    res.status(200).json({ friendsDetails });
   } catch (err) {
     console.log("Error in fetching friends:", err);
     res.status(500).json({ Message: "Some Internal Error" });
   }
 });
-
-//Endpoint to recieve and store messages in database
-
-// app.post("/messages", upload.single("imageFile"), async (req, res) => {
-//   try {
-
-//   } catch (err) {
-//     console.log("Error in sending messages", err);
-//     res.status(500).json({ Message: "Error in sending message to database" });
-//   }
-// });
-
-//Endpoint to get details of user for ChatRoom Header
 
 app.get("/othersender/:UserId", async (req, res) => {
   try {
@@ -222,7 +240,7 @@ app.get("/othersender/:UserId", async (req, res) => {
     console.log(UserId);
     //fetch the user data from the UserId
     const RecieverId = await User.findById(UserId);
-    console.log(RecieverId);
+    console.log("othersender", RecieverId);
     res.json(RecieverId);
   } catch (err) {
     console.log("Error to get details of user for ChatRoom Header", err);
